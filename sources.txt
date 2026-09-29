@@ -1,0 +1,5 @@
+src/todo/App.java
+src/todo/model/Task.java
+src/todo/repository/TaskSnapshot.java
+src/todo/repository/TaskRepository.java
+src/todo/service/TaskManager.java

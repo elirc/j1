@@ -1,0 +1,8 @@
+out/
+.verification/
+__pycache__/
+*.class
+tasks.txt
+tasks.txt.lock
+tasks.txt.legacy-backup
+.todo-save-*.tmp
