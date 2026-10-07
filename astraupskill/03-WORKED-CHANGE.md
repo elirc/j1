@@ -24,7 +24,9 @@ The user story is: "I can update a task's title and description, and I can trust
 
 ## Capture the value being edited
 
-In [App.java](../src/todo/App.java), option 6 obtains a task through `selected`, displays its current values, and reads the replacement title and description. The selected task is immutable, so the version and content describe a stable value. The terminal passes its ID and version to the service with the user's replacement fields.
+In [App.java](../src/todo/App.java), option 6 obtains a task through `selected`, displays its current values, and reads the replacement title and description. The selected task is immutable, so the version and content describe a stable value. The terminal passes its ID and version to the service with the user's replacement fields (`App.java:32`).
+
+Be precise about what this protects in the CLI. Selection and save happen within one command on one thread, so nothing in this process can change the task in between, and `expected` always matches here. When a *second terminal* has saved, this session's snapshot still shows version 1, so the version check passes. The repository's file-baseline comparison (`TaskRepository.java:50`) is what rejects the stale write. The version parameter becomes the active guard once an adapter holds a version across time, such as an HTTP client.
 
 A future browser form would keep the same captured version in draft state. Fetching a new version automatically just before saving would defeat the purpose: it could approve an overwrite the user never reviewed. Treat the version as part of the user's editing context, not as a number to refresh until a request succeeds.
 
@@ -32,7 +34,7 @@ A future browser form would keep the same captured version in draft state. Fetch
 
 In [TaskManager](../src/todo/service/TaskManager.java), `editTask` calls `expected`. A missing task or mismatched version rejects the operation. The immutable task's `edit` method validates the new text and returns a replacement with the next version. The manager then constructs a candidate list and snapshot.
 
-For example, suppose task 4 is version 2 with title "Study file storage." An accepted edit to "Study atomic file storage" creates task version 3 and increments the workspace revision. Its ID and creation timestamp stay the same. An attempted second edit carrying version 2 is rejected before persistence, leaving version 3 unchanged.
+For example, suppose task 4 is version 2 with title "Study file storage." An accepted edit to "Study atomic file storage" creates task version 3 and increments the workspace revision. Its ID and creation timestamp stay the same. An attempted second edit carrying version 2 is rejected before persistence, leaving version 3 unchanged. The unit test `stale record version rejects without changing accepted data` (`TaskWorkflowTest.java:61`) does exactly this through the service API.
 
 ## Cross the durable boundary
 

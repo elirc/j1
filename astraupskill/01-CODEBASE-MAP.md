@@ -1,5 +1,16 @@
 # Codebase map and reading order
 
+The whole application is 323 lines of Java in five files, plus a 74-line test class. The code is dense, often with several statements per line, so read it slowly. All counts below were taken on 2026-10-06.
+
+| File | Lines | Role | Look at first |
+|---|---|---|---|
+| `src/todo/model/Task.java` | 57 | Immutable validated value | constructor `:17-30`, `edit`/`withCompletion` `:42-48` |
+| `src/todo/repository/TaskSnapshot.java` | 15 | Whole-workspace record | invariants `:6-13` |
+| `src/todo/service/TaskManager.java` | 70 | Accepted state + mutations | `commit` `:29-33`, `expected` `:39-43` |
+| `src/todo/repository/TaskRepository.java` | 136 | File format, lock, atomic save | `save` `:39-69`, `decode` `:103-119` |
+| `src/todo/App.java` | 45 | Terminal adapter | menu `:23-37` |
+| `test/todo/TaskWorkflowTest.java` | 74 | 35 model/repository/service tests | `main` `:27-73` |
+
 Begin with [Task.java](../src/todo/model/Task.java). A task is an immutable value containing an ID, version, title, description, completion state, and timestamps. Its constructor rejects invalid combinations. `edit` and `withCompletion` return replacement values; they do not alter an object already held by another caller. This makes a returned task safe to inspect without granting hidden mutation access.
 
 Read [TaskSnapshot](../src/todo/repository/TaskSnapshot.java) next. It represents the entire accepted workspace: a revision, a next-ID watermark, and an immutable list of tasks. The watermark must be greater than every current task ID. Keeping it separately from the maximum existing ID prevents reuse after the highest task is deleted. The constructor also rejects duplicate IDs and excessive task counts.

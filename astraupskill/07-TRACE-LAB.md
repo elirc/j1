@@ -4,7 +4,7 @@ Use a new fictional file and keep two terminal windows available. This lab is de
 
 ## The durable boundary Trace C stops at
 
-Trace C ends inside `save`. Note the order: revision and watermark checks, then the file lock, then the baseline byte comparison that produces the "changed in another session" message you will see in the second terminal. From `src/todo/repository/TaskRepository.java:39-51`:
+Trace C ends inside `save`. Note the order: revision and watermark checks, then the file lock, then the baseline byte comparison that produces the "changed in another session" message you will see in the second terminal. From `src/todo/repository/TaskRepository.java:39-50`:
 
 ```java
     public synchronized void save(TaskSnapshot candidate) throws IOException {

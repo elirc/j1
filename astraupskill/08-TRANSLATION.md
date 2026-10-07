@@ -7,19 +7,39 @@ Two pages, three mechanisms. Everything else in this course is language-neutral.
 ## 1. The `Task` value object
 
 ```csharp
-public sealed record TaskItem(int Id, int Version, string Title, bool Done, DateOnly? DueDate)
+public sealed record TaskItem
 {
-    public TaskItem
+    public int Id { get; }
+    public int Version { get; }
+    public string Title { get; }
+    public string Description { get; }
+
+    public TaskItem(int id, int version, string title, string? description)
     {
-        if (Id < 0) throw new ArgumentOutOfRangeException(nameof(Id));
-        if (Version < 1) throw new ArgumentOutOfRangeException(nameof(Version));
-        if (string.IsNullOrWhiteSpace(Title) || Title.Length > 200) throw new ArgumentException("Title must be 1-200 characters.");
+        if (id < 1 || version < 1) throw new ArgumentException("Positive id and version required.");
+        Title = Text(title, 1, 160, "Title");
+        Description = Text(description ?? "", 0, 2000, "Description");
+        Id = id; Version = version;
     }
-    public TaskItem WithTitle(string title) => this with { Title = title };
+
+    static string Text(string value, int min, int max, string label)
+    {
+        var s = value.Trim();
+        if (s.Length < min || s.Length > max || s.Any(char.IsControl))
+            throw new ArgumentException($"{label} must contain {min}..{max} characters without controls.");
+        return s;
+    }
+
+    // Mirrors Task.edit (Task.java:42): new value, next version, validation re-run.
+    public TaskItem Edit(string title, string? description) =>
+        new(Id, checked(Version + 1), title, description);
 }
 ```
 
-A `record` gives what the Java class hand-writes: immutability, value equality, and a validated constructor. `with` expressions replace the copy-constructor helpers.
+Completion state and the timestamps are left out to keep this short. Add them the same way. A `record` gives you value equality, and get-only properties give you immutability. Two Java-to-C# traps are worth knowing:
+
+- **C# has no compact constructor.** Java's `public TaskSnapshot { ... }` validation block (`TaskSnapshot.java:6`) has no C# equivalent. A positional record `record TaskItem(int Id, ...)` cannot validate its parameters in a constructor body, so this example uses an explicit constructor.
+- **`with` skips your constructor.** `item with { Title = "" }` copies the object and sets the property directly, so no validation runs and `Version` is not bumped. That is why the properties have no `init` accessor (so `with` cannot set them) and edits go through `Edit`, just as Java callers must use `edit`/`withCompletion`. `checked` turns version overflow into an exception, like `nextVersion` at `Task.java:38-41`.
 
 ## 2. The version check
 

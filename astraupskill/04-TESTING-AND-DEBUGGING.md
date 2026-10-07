@@ -11,6 +11,21 @@ python scripts/verify.py
 TODO_VERIFY_RESULTS_DIR=/tmp/todo-evidence python scripts/verify.py
 ```
 
+`.verification/` is listed in `.gitignore`, so the evidence never shows up as a change.
+
+## Run only the Java suite (no Python)
+
+`TaskWorkflowTest` has its own `main` and takes a scratch directory for its fixtures. There are no JUnit or other dependencies:
+
+```bash
+javac -encoding UTF-8 --release 17 -d "$TMP/todo-classes" $(git ls-files 'src/*.java' 'test/*.java')
+java -cp "$TMP/todo-classes" todo.TaskWorkflowTest "$TMP/todo-unit"
+```
+
+Each test prints `PASS <name>`, and a full run ends with `RESULT {"passed":true,"tests":35}`. The first failing test throws and stops the run, so the last `PASS` line tells you where to look. Re-run on 2026-10-06 with JDK 17.0.10, the suite gave 35 passes.
+
+The CLI-level checks in [the practice guide](05-PRACTICE.md) use the same idea from Node. `practice/harness.mjs` compiles `src/` into `os.tmpdir()` and pipes menu input into `todo.App`, so you can turn any scenario below into a `node --test` file.
+
 ## Use fixtures that make corruption harmless
 
 Never experiment by corrupting your normal task file. The helper creates all data under its owned temporary directory. The startup-failure scenario writes a malformed fixture, starts the CLI, expects a nonzero exit code, and compares the bytes afterward. This establishes that the old "start empty after load error" behavior cannot silently erase a user's file.
